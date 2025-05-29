@@ -180,6 +180,9 @@ function read_ptu(full_filename) # Read PicoQuant Unified TTTR Files
     end
     print("\n----------------------\n");
 
+    channels = zeros(UInt8, TTResult_NumberOfRecords)
+    time_tags = zeros(UInt8, TTResult_NumberOfRecords)
+
     # Check recordtype
     global isT2;
     if TTResultFormat_TTTRRecType == rtPicoHarpT3
@@ -238,21 +241,21 @@ function read_ptu(full_filename) # Read PicoQuant Unified TTTR Files
     cnt_ma = 0;
     # choose right decode function
     if TTResultFormat_TTTRRecType == rtPicoHarpT3
-            ReadPT3(fid,);
+            ReadPT3();
     elseif TTResultFormat_TTTRRecType == rtPicoHarpT2
             isT2 = true;
-            ReadPT2!(channels, time_tags);
+            ReadPT2();
     elseif TTResultFormat_TTTRRecType == rtHydraHarpT3
-            ReadHT3!(1, channels, time_tags);
+            ReadHT3(1);
     elseif TTResultFormat_TTTRRecType == rtHydraHarpT2
             isT2 = true;
-            ReadHT2!(1, channels, time_tags);
+            ReadHT2(1);
     elseif TTResultFormat_TTTRRecType in (rtMultiHarpT3, rtHydraHarp2T3, rtTimeHarp260NT3, rtTimeHarp260PT3)
             isT2 = false;
-            ReadHT3!(2, channels, time_tags);
+            ReadHT3(2);
     elseif TTResultFormat_TTTRRecType in (rtMultiHarpT2, rtHydraHarp2T2, rtTimeHarp260NT2, rtTimeHarp260PT2)
             isT2 = true;
-            ReadHT2!(2, channels, time_tags);
+            ReadHT2(2);
     else
         close(fid)
         error("Illegal RecordType $(TTResultFormat_TTTRRecType)!");
@@ -287,6 +290,7 @@ end
 #    TimeTag: Raw TimeTag from Record * Globalresolution = Real Time arrival of Photon
 #    Markers: Bitfield of arrived Markers, different markers can arrive at same time (same record)
 function GotMarker(TimeTag, Markers)
+    global fpout;
     global RecNum;
     global cnt_ma;
     global MeasDesc_GlobalResolution;
@@ -298,6 +302,7 @@ end
 ## Got Overflow
 #  Count: Some TCSPC provide Overflow compression = if no Photons between overflow you get one record for multiple Overflows
 function GotOverflow(Count)
+    global fpout;
     global RecNum;
     global cnt_ov;
     cnt_ov = cnt_ov + Count;
@@ -308,12 +313,13 @@ end
 ## Decoder functions
 
 ## Read PicoHarp T3
-function ReadPT3(fid, TTResult_NumberOfRecords)
+function ReadPT3()
+    global fid;
+    global fpout;
     global RecNum;
+    global TTResult_NumberOfRecords; # Number of TTTR Records in the File;
     ofltime = 0;
     WRAPAROUND=65536;
-    channels = zeros(UInt8, TTResult_NumberOfRecords)
-    time_tags = zeros(UInt16, TTResult_NumberOfRecords)
 
     @showprogress for i=1:TTResult_NumberOfRecords
         RecNum = i;
@@ -353,7 +359,7 @@ function ReadPT3(fid, TTResult_NumberOfRecords)
 end
 
 ## Read PicoHarp T2
-function ReadPT2!(channels, time_tags)
+function ReadPT2()
     global fid
     global fpout
     global RecNum
@@ -390,7 +396,7 @@ function ReadPT2!(channels, time_tags)
 end
 
 ## Read HydraHarp/TimeHarp260 T3
-function ReadHT3!(Version, channels, time_tags)
+function ReadHT3(Version)
     global fid;
     global RecNum;
     global TTResult_NumberOfRecords; # Number of TTTR Records in the File
@@ -444,7 +450,7 @@ function ReadHT3!(Version, channels, time_tags)
 end
 
 ## Read HydraHarp/TimeHarp260 T2
-function ReadHT2!(Version, channels, time_tags)
+function ReadHT2(Version)
     global fid;
     global TTResult_NumberOfRecords; # Number of TTTR Records in the File;
     global RecNum;
