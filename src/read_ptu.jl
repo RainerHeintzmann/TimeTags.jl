@@ -293,7 +293,7 @@ function ReadHT3(Version, fid, TTResult_NumberOfRecords)
     T3WRAPAROUND = 1024;
     channels = zeros(UInt8, TTResult_NumberOfRecords)
     time_tags = zeros(UInt64, TTResult_NumberOfRecords)
-    dtime = zeros(UInt16, TTResult_NumberOfRecords)
+    dtimes = zeros(UInt16, TTResult_NumberOfRecords)
 
     @showprogress for i = 1:TTResult_NumberOfRecords
         RecNum = i;
